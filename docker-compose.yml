@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8002:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=True
+      - MONGODB_URL=mongodb://mongo:27017
+      - MONGODB_DB_NAME=custodian_service
+      - SECRET_KEY=your-secret-key-for-development-only
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+    depends_on:
+      - mongo
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    networks:
+      - custodian-network
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - custodian-network
+
+networks:
+  custodian-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
