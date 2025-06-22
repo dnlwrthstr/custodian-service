@@ -55,8 +55,9 @@ async def startup_db_client():
         logger.info("MongoDB connection established")
     except Exception as e:
         logger.error(f"Failed to connect to MongoDB: {str(e)}")
-        # We don't raise the exception here to allow the application to start
-        # even if the database is not available initially. It will retry on requests.
+        # Fail fast: If we can't connect to the database, the application should not start
+        # as it cannot fulfill its primary function
+        raise
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
@@ -67,7 +68,9 @@ async def shutdown_db_client():
 @app.get("/", tags=["Health Check"])
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "service": "custodian-service"}
+    # Since we're using the fail-fast approach, if this endpoint is reachable,
+    # it means the application has started successfully and the database connection is available
+    return {"status": "healthy", "service": "custodian-service", "database": "connected"}
 
 @app.get("/db-health", tags=["Health Check"])
 async def db_health_check(db = Depends(get_database)):

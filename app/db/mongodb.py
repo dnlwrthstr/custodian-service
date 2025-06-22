@@ -67,9 +67,15 @@ async def get_database() -> AsyncGenerator:
     Get MongoDB database connection.
 
     Ensures that a connection to MongoDB exists before yielding the database.
+    Raises an exception if the database connection is not available.
     """
+    global database
     if client is None:
         await connect_to_mongodb()
+
+    if database is None:
+        logger.error("Database connection is not available")
+        raise ConnectionError("Database connection is not available")
 
     try:
         yield database
