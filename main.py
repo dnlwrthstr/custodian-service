@@ -7,8 +7,25 @@ from app.core.config import settings
 
 app = FastAPI(
     title="Custodian Service API",
-    description="API for custodian services implementing OpenWealth standards",
+    description="""
+    API for custodian services implementing OpenWealth standards.
+
+    ## Features
+
+    * Manage custodians and their credentials
+    * Track portfolios, accounts, positions, and transactions
+    * Implement OpenWealth standards for financial data
+
+    ## API Documentation
+
+    * Swagger UI: `/docs`
+    * ReDoc: `/redoc`
+    * OpenAPI JSON: `/openapi.json`
+    """,
     version="0.1.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
 )
 
 # Set up CORS

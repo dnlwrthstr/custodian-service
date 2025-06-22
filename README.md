@@ -54,6 +54,22 @@ Once the application is running, you can access the interactive API documentatio
 
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
+- OpenAPI JSON: http://localhost:8000/openapi.json
+
+The API documentation provides detailed information about all endpoints, including:
+- Request parameters and their types
+- Request body schemas
+- Response schemas
+- Error responses
+
+### Using API Documentation in a Frontend Project
+
+For detailed instructions on how to use the API documentation in a frontend project, see [API_DOCUMENTATION.md](API_DOCUMENTATION.md). This guide covers:
+
+- Linking to the API documentation
+- Embedding the documentation in your frontend
+- Generating client code from the OpenAPI specification
+- Using Swagger UI directly in your frontend application
 
 ## API Endpoints
 
@@ -123,6 +139,7 @@ custodian-service/
 │   ├── transactions.json
 │   └── seed_database.py
 ├── .env
+├── API_DOCUMENTATION.md
 ├── main.py
 ├── requirements.txt
 └── README.md

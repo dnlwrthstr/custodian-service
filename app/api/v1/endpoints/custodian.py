@@ -23,6 +23,12 @@ async def create_custodian(
 ):
     """
     Create a new custodian.
+
+    Parameters:
+    - **custodian**: Required. The custodian data including name, code, description, contact_info, and api_credentials.
+
+    Returns:
+    - A custodian object with id, created_at, and updated_at fields.
     """
     custodian_service = CustodianService(db)
     return await custodian_service.create_custodian(custodian)
@@ -35,6 +41,13 @@ async def get_custodians(
 ):
     """
     Retrieve all custodians.
+
+    Parameters:
+    - **skip**: Optional. Number of custodians to skip (for pagination). Default: 0.
+    - **limit**: Optional. Maximum number of custodians to return. Default: 100.
+
+    Returns:
+    - A list of custodian objects.
     """
     custodian_service = CustodianService(db)
     return await custodian_service.get_custodians(skip=skip, limit=limit)
@@ -46,6 +59,15 @@ async def get_custodian(
 ):
     """
     Retrieve a specific custodian by ID.
+
+    Parameters:
+    - **custodian_id**: Required. The ID of the custodian to retrieve.
+
+    Returns:
+    - A custodian object.
+
+    Raises:
+    - 404: If the custodian with the specified ID is not found.
     """
     custodian_service = CustodianService(db)
     custodian = await custodian_service.get_custodian(custodian_id)
@@ -64,6 +86,16 @@ async def update_custodian(
 ):
     """
     Update a custodian.
+
+    Parameters:
+    - **custodian_id**: Required. The ID of the custodian to update.
+    - **custodian_update**: Required. The updated custodian data. Only the fields to be updated need to be included.
+
+    Returns:
+    - The updated custodian object.
+
+    Raises:
+    - 404: If the custodian with the specified ID is not found.
     """
     custodian_service = CustodianService(db)
     custodian = await custodian_service.update_custodian(custodian_id, custodian_update)
@@ -81,6 +113,15 @@ async def delete_custodian(
 ):
     """
     Delete a custodian.
+
+    Parameters:
+    - **custodian_id**: Required. The ID of the custodian to delete.
+
+    Returns:
+    - No content (204) if successful.
+
+    Raises:
+    - 404: If the custodian with the specified ID is not found.
     """
     custodian_service = CustodianService(db)
     deleted = await custodian_service.delete_custodian(custodian_id)
@@ -98,6 +139,12 @@ async def get_portfolios(
 ):
     """
     Retrieve all portfolios for a custodian.
+
+    Parameters:
+    - **custodian_id**: Required. The ID of the custodian whose portfolios to retrieve.
+
+    Returns:
+    - A list of portfolio objects associated with the specified custodian.
     """
     custodian_service = CustodianService(db)
     return await custodian_service.get_portfolios(custodian_id)
@@ -110,6 +157,13 @@ async def create_portfolio(
 ):
     """
     Create a new portfolio for a custodian.
+
+    Parameters:
+    - **custodian_id**: Required. The ID of the custodian to associate with the portfolio.
+    - **portfolio**: Required. The portfolio data including portfolio_id, name, description, and currency.
+
+    Returns:
+    - The created portfolio object with id, custodian_id, created_at, and updated_at fields.
     """
     # Ensure the portfolio is associated with the specified custodian
     portfolio_data = portfolio.dict()
