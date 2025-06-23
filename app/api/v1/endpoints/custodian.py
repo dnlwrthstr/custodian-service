@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional, TypeVar, Callable, Awaitable, Any
 import functools
+import logging
 
 from app.db.mongodb import get_database
+from app.db.kafka import get_kafka_service
 from app.models.custodian import CustodianInDB
 from app.schemas.custodian import (
     CustodianCreate,
@@ -18,6 +20,8 @@ from app.schemas.custodian import (
     TransactionResponse
 )
 from app.services.custodian_service import CustodianService
+
+logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
 
@@ -42,7 +46,8 @@ router = APIRouter()
 @handle_db_errors
 async def create_custodian(
     custodian: CustodianCreate,
-    db = Depends(get_database)
+    db = Depends(get_database),
+    kafka_service = Depends(get_kafka_service)
 ):
     """
     Create a new custodian.
@@ -56,8 +61,19 @@ async def create_custodian(
     Raises:
     - 500: If there's a database connection error.
     """
-    custodian_service = CustodianService(db)
-    return await custodian_service.create_custodian(custodian)
+    try:
+        # First, store in MongoDB
+        custodian_service = CustodianService(db, kafka_service)
+        created_custodian = await custodian_service.create_custodian(custodian)
+
+        # Log successful creation
+        logger.info(f"Custodian created and stored in MongoDB with ID: {created_custodian.id}")
+
+        return created_custodian
+    except Exception as e:
+        # Log the error with more details
+        logger.error(f"Error creating custodian: {str(e)}")
+        raise
 
 @router.get("/", response_model=List[CustodianResponse])
 @handle_db_errors
@@ -115,7 +131,8 @@ async def get_custodian(
 async def update_custodian(
     custodian_id: str,
     custodian_update: CustodianUpdate,
-    db = Depends(get_database)
+    db = Depends(get_database),
+    kafka_service = Depends(get_kafka_service)
 ):
     """
     Update a custodian.
@@ -131,14 +148,26 @@ async def update_custodian(
     - 404: If the custodian with the specified ID is not found.
     - 500: If there's a database connection error.
     """
-    custodian_service = CustodianService(db)
-    custodian = await custodian_service.update_custodian(custodian_id, custodian_update)
-    if not custodian:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Custodian with ID {custodian_id} not found"
-        )
-    return custodian
+    try:
+        # Initialize service with both DB and Kafka
+        custodian_service = CustodianService(db, kafka_service)
+
+        # Update the custodian
+        custodian = await custodian_service.update_custodian(custodian_id, custodian_update)
+
+        if not custodian:
+            logger.error(f"Failed to update custodian with ID: {custodian_id}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Custodian with ID {custodian_id} not found"
+            )
+
+        logger.info(f"Custodian updated successfully with ID: {custodian_id}")
+        return custodian
+
+    except Exception as e:
+        logger.error(f"Error updating custodian: {str(e)}")
+        raise
 
 @router.delete("/{custodian_id}", status_code=status.HTTP_204_NO_CONTENT)
 @handle_db_errors
@@ -357,7 +386,8 @@ async def get_transactions(
 async def create_transaction(
     custodian_id: str,
     transaction: TransactionCreate,
-    db = Depends(get_database)
+    db = Depends(get_database),
+    kafka_service = Depends(get_kafka_service)
 ):
     """
     Create a new transaction for a custodian.
@@ -376,5 +406,5 @@ async def create_transaction(
     transaction_data = transaction.dict()
     transaction_data["custodian_id"] = custodian_id
 
-    custodian_service = CustodianService(db)
+    custodian_service = CustodianService(db, kafka_service)
     return await custodian_service.create_transaction(TransactionCreate(**transaction_data))
