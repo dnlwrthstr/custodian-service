@@ -327,7 +327,8 @@ async def get_positions(
 async def create_position(
     custodian_id: str,
     position: PositionCreate,
-    db = Depends(get_database)
+    db = Depends(get_database),
+    kafka_service = Depends(get_kafka_service)
 ):
     """
     Create a new position for a custodian.
@@ -346,7 +347,7 @@ async def create_position(
     position_data = position.dict()
     position_data["custodian_id"] = custodian_id
 
-    custodian_service = CustodianService(db)
+    custodian_service = CustodianService(db, kafka_service)
     return await custodian_service.create_position(PositionCreate(**position_data))
 
 # OpenWealth standard endpoints for transactions

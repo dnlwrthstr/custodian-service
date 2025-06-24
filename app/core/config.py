@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     KAFKA_BOOTSTRAP_SERVERS: str = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
     KAFKA_TRANSACTION_TOPIC: str = os.getenv("KAFKA_TRANSACTION_TOPIC", "custodian.transactions")
     KAFKA_CUSTODIAN_TOPIC: str = os.getenv("KAFKA_CUSTODIAN_TOPIC", "custodian.custodian")
+    KAFKA_PORTFOLIO_TOPIC: str = os.getenv("KAFKA_PORTFOLIO_TOPIC", "custodian.portfolio")
+    KAFKA_POSITION_TOPIC: str = os.getenv("KAFKA_POSITION_TOPIC", "custodian.position")
     KAFKA_ENABLED: bool = os.getenv("KAFKA_ENABLED", "True").lower() in ("true", "1", "t")
 
     # Security settings

@@ -233,7 +233,43 @@ class CustodianService:
         created_portfolio = await self.portfolio_collection.find_one({"_id": result.inserted_id})
         created_portfolio = self._convert_object_id(created_portfolio)
 
-        return PortfolioInDB(**created_portfolio)
+        portfolio_obj = PortfolioInDB(**created_portfolio)
+
+        # Produce Kafka event if Kafka service is available
+        if self.kafka_service and settings.KAFKA_ENABLED:
+            try:
+                logger.info(f"Preparing to send portfolio event to Kafka for portfolio ID: {portfolio_obj.id}")
+
+                # Prepare event data
+                event_data = {
+                    "event_type": "portfolio_created",
+                    "portfolio": {
+                        "id": portfolio_obj.id,
+                        "custodian_id": portfolio_obj.custodian_id,
+                        "portfolio_id": portfolio_obj.portfolio_id,
+                        "name": portfolio_obj.name,
+                        "description": portfolio_obj.description,
+                        "currency": portfolio_obj.currency,
+                        "created_at": portfolio_obj.created_at.isoformat(),
+                        "updated_at": portfolio_obj.updated_at.isoformat()
+                    }
+                }
+
+                # Produce event to Kafka
+                await self.kafka_service.produce_event(
+                    topic=settings.KAFKA_PORTFOLIO_TOPIC,
+                    key=portfolio_obj.id,
+                    value=event_data
+                )
+
+                logger.info(f"Successfully sent portfolio event to Kafka for portfolio ID: {portfolio_obj.id}")
+            except Exception as e:
+                # Log error but don't fail the request
+                logger.error(f"Failed to produce portfolio event to Kafka: {str(e)}")
+        else:
+            logger.warning(f"Kafka service not available or disabled. Skipping event production for portfolio ID: {portfolio_obj.id}")
+
+        return portfolio_obj
 
     # Account methods
     async def get_accounts(self, custodian_id: str, portfolio_id: Optional[str] = None) -> List[AccountInDB]:
@@ -298,7 +334,42 @@ class CustodianService:
         created_position = await self.position_collection.find_one({"_id": result.inserted_id})
         created_position = self._convert_object_id(created_position)
 
-        return PositionInDB(**created_position)
+        # Create a position object to return
+        position_obj = PositionInDB(**created_position)
+
+        # Produce Kafka event if Kafka service is available
+        if self.kafka_service and settings.KAFKA_ENABLED:
+            try:
+                # Create event data
+                event_data = {
+                    "event_type": "position_created",
+                    "position_id": str(result.inserted_id),
+                    "custodian_id": position_dict["custodian_id"],
+                    "portfolio_id": position_dict.get("portfolio_id"),
+                    "account_id": position_dict.get("account_id"),
+                    "security_id": position_dict.get("security_id"),
+                    "security_type": position_dict.get("security_type"),
+                    "quantity": position_dict.get("quantity"),
+                    "market_value": position_dict.get("market_value"),
+                    "currency": position_dict.get("currency"),
+                    "cost_basis": position_dict.get("cost_basis"),
+                    "unrealized_pl": position_dict.get("unrealized_pl"),
+                    "as_of_date": position_dict.get("as_of_date").isoformat() if position_dict.get("as_of_date") else None,
+                    "created_at": position_dict["created_at"].isoformat()
+                }
+
+                # Produce event to Kafka
+                await self.kafka_service.produce_event(
+                    topic=settings.KAFKA_POSITION_TOPIC,
+                    data=event_data,
+                    key=str(result.inserted_id)
+                )
+            except Exception as e:
+                # Log error but don't fail the position creation
+                # The position is still valid even if the event production fails
+                logger.error(f"Failed to produce position event to Kafka: {str(e)}")
+
+        return position_obj
 
     # Transaction methods
     async def get_transactions(

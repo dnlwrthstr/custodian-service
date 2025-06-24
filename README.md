@@ -1,6 +1,6 @@
 # Custodian Service API
 
-A FastAPI service that implements custodian interfaces as specified in OpenWealth standards, using MongoDB as the database.
+A FastAPI service that implements custodian interfaces as specified in OpenWealth standards, using MongoDB as the database. This service is part of the Financial Advisory Project, a comprehensive financial advisory application built with a microservices architecture.
 
 ## Features
 
@@ -9,11 +9,19 @@ A FastAPI service that implements custodian interfaces as specified in OpenWealt
 - MongoDB integration for data storage
 - Asynchronous API with FastAPI
 - Comprehensive data validation with Pydantic
+- Event-driven architecture with Kafka integration
+- Containerized deployment with Docker
+- Kubernetes deployment support
 
 ## Requirements
 
+### For Local Development
 - Python 3.8+
 - MongoDB
+
+### For Containerized Deployment (Optional)
+- Docker and Docker Compose
+- Kubernetes (for production deployment)
 
 ## Installation
 
@@ -37,6 +45,26 @@ pip install -r requirements.txt
 4. Configure environment variables:
    - Copy the `.env.example` file to `.env` (if not already present)
    - Update the MongoDB connection URL and other settings as needed
+
+## Environment Variables
+
+The Custodian Service can be configured using the following environment variables:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `HOST` | Host to bind the service | `0.0.0.0` |
+| `PORT` | Port to bind the service | `8000` |
+| `DEBUG` | Enable debug mode | `False` |
+| `MONGODB_URL` | MongoDB connection URL | `mongodb://localhost:27017` |
+| `MONGODB_DB_NAME` | MongoDB database name | `custodian_service` |
+| `SECRET_KEY` | Secret key for JWT tokens | Required |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT token expiration time in minutes | `30` |
+| `KAFKA_BOOTSTRAP_SERVERS` | Kafka bootstrap servers | `localhost:9092` |
+| `KAFKA_TRANSACTION_TOPIC` | Kafka topic for transaction events | `custodian.transactions` |
+| `KAFKA_CUSTODIAN_TOPIC` | Kafka topic for custodian events | `custodian.custodian` |
+| `KAFKA_ENABLED` | Enable Kafka integration | `False` |
+
+These variables can be set in the `.env` file for local development or as environment variables in Docker/Kubernetes deployments.
 
 ## Running the Application
 
@@ -188,6 +216,90 @@ To run tests:
 ```bash
 pytest
 ```
+
+## Docker Containerization
+
+The Custodian Service is containerized using Docker for easy deployment and scaling. The service includes:
+
+- A `Dockerfile` for building the service container
+- A service-specific `docker-compose.yml` for local development
+- Integration with the main project's `docker-compose.yml` for running as part of the complete system
+
+### Building and Running with Docker
+
+To build and run the service using Docker:
+
+```bash
+# Build the Docker image
+docker build -t custodian-service .
+
+# Run the container
+docker run -p 8000:8000 custodian-service
+```
+
+### Running with Docker Compose
+
+For local development with MongoDB:
+
+```bash
+# Start the service with its dependencies
+docker-compose up -d
+
+# Stop the service
+docker-compose down
+```
+
+To run as part of the complete Financial Advisory Project:
+
+```bash
+# From the project root directory
+docker-compose up -d
+```
+
+## Kubernetes Deployment
+
+The Custodian Service supports deployment to Kubernetes clusters. Kubernetes manifests are provided in the `k8s/custodian-service` directory:
+
+- `configmap.yaml`: Configuration for the service
+- `deployment.yaml`: Deployment specification
+- `service.yaml`: Service definition for network access
+
+### Deploying to Kubernetes
+
+To deploy the service to a Kubernetes cluster:
+
+```bash
+# Apply the Kubernetes manifests
+kubectl apply -f k8s/custodian-service/
+
+# Check the deployment status
+kubectl get deployments
+kubectl get pods
+kubectl get services
+```
+
+## Integration with Other Services
+
+The Custodian Service is part of the Financial Advisory Project's microservices architecture and integrates with:
+
+### MongoDB
+- Used for storing custodian data, portfolios, accounts, positions, and transactions
+- Configured via environment variables
+
+### Kafka
+- Publishes events to Kafka topics for event-driven communication
+- Main topics:
+  - `custodian.transactions`: Transaction events
+  - `custodian.custodian`: Custodian events
+- Consumed by other services like `load-custodian-service`
+
+### Search Service
+- Consumes data from the Custodian Service API
+- Provides search capabilities across custodian data
+
+### Frontend
+- Connects to the Custodian Service API for data display and management
+- Configured to access the API at the appropriate endpoint
 
 ## License
 

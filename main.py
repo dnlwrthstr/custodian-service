@@ -73,13 +73,14 @@ async def startup_kafka_client():
     """Initialize Kafka connection on startup."""
     if settings.KAFKA_ENABLED:
         logger.info("Connecting to Kafka...")
-        try:
-            await connect_to_kafka()
+        # connect_to_kafka now handles exceptions internally
+        kafka_service = await connect_to_kafka()
+        if kafka_service:
             logger.info("Kafka connection established")
-        except Exception as e:
-            logger.error(f"Failed to connect to Kafka: {str(e)}")
-            # Log error but don't fail the application startup
+        else:
+            logger.warning("Failed to establish Kafka connection during startup. Will retry when needed.")
             # The application can still function without Kafka
+            # The get_kafka_service function will retry connecting when needed
 
 @app.on_event("startup")
 async def seed_database_on_startup():
